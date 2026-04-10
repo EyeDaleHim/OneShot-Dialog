@@ -1,0 +1,41 @@
+{
+  "name": "oneshot-dlg-language",
+  "displayName": "OneShot Dialogue (.dlg)",
+  "description": "Language support for OneShotDomain dialogue script files (.dlg).",
+  "version": "0.0.1",
+  "publisher": "oneshot-community",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "oneshot",
+    "dialogue",
+    "dlg",
+    "narrative"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "dlg",
+        "aliases": [
+          "OneShot Dialogue",
+          "dlg"
+        ],
+        "extensions": [
+          ".dlg"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "dlg",
+        "scopeName": "source.dlg",
+        "path": "./syntaxes/dlg.tmLanguage.json"
+      }
+    ]
+  }
+}

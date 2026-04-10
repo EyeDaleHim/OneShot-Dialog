@@ -1,0 +1,166 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "OneShot Dialogue",
+  "scopeName": "source.dlg",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#sceneHeader" },
+    { "include": "#blockKeywords" },
+    { "include": "#statementKeywords" },
+    { "include": "#optionKeyword" },
+    { "include": "#namedArgs" },
+    { "include": "#conditionals" },
+    { "include": "#values" },
+    { "include": "#inlineOverrides" },
+    { "include": "#strings" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.dlg",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "sceneHeader": {
+      "patterns": [
+        {
+          "name": "meta.scene.header.dlg",
+          "match": "^(\\s*)(scene)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*:)",
+          "captures": {
+            "2": { "name": "keyword.control.scene.dlg" },
+            "4": { "name": "entity.name.section.scene.dlg" },
+            "5": { "name": "punctuation.separator.colon.dlg" }
+          }
+        }
+      ]
+    },
+    "blockKeywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.block.dlg",
+          "match": "^(\\s*)(params|choice|else)(\\s*:)",
+          "captures": {
+            "2": { "name": "keyword.control.dlg" },
+            "3": { "name": "punctuation.separator.colon.dlg" }
+          }
+        },
+        {
+          "name": "meta.if.statement.dlg",
+          "match": "^(\\s*)(if)\\b(.*?)(:)\\s*$",
+          "captures": {
+            "2": { "name": "keyword.control.conditional.dlg" },
+            "3": { "name": "meta.condition.dlg" },
+            "4": { "name": "punctuation.separator.colon.dlg" }
+          }
+        }
+      ]
+    },
+    "statementKeywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.statement.dlg",
+          "match": "^(\\s*)(say|music|sfx|flag|call|goto)\\b"
+        }
+      ]
+    },
+    "optionKeyword": {
+      "patterns": [
+        {
+          "name": "meta.choice.option.dlg",
+          "match": "^(\\s*)(option)\\b",
+          "captures": {
+            "2": { "name": "keyword.control.option.dlg" }
+          }
+        }
+      ]
+    },
+    "namedArgs": {
+      "patterns": [
+        {
+          "name": "variable.parameter.argument.dlg",
+          "match": "\\b(actor|portrait|side|speed|color|effect|voice|crossfade)\\b(?=\\s*=)"
+        }
+      ]
+    },
+    "conditionals": {
+      "patterns": [
+        {
+          "name": "keyword.operator.comparison.dlg",
+          "match": "==|!="
+        },
+        {
+          "name": "keyword.control.conditional.inline.dlg",
+          "match": "\\bif\\b"
+        }
+      ]
+    },
+    "values": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.dlg",
+          "match": "\\b\\d+\\.\\d+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.dlg",
+          "match": "\\b\\d+\\b"
+        },
+        {
+          "name": "constant.language.boolean.dlg",
+          "match": "\\b(true|false)\\b"
+        },
+        {
+          "name": "constant.other.color.hex.dlg",
+          "match": "#[0-9A-Fa-f]{6}\\b"
+        },
+        {
+          "name": "constant.language.none.dlg",
+          "match": "\\bnone\\b"
+        }
+      ]
+    },
+    "inlineOverrides": {
+      "patterns": [
+        {
+          "name": "meta.inline.override.dlg",
+          "begin": "\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": { "name": "punctuation.section.braces.begin.dlg" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.section.braces.end.dlg" }
+          },
+          "patterns": [
+            {
+              "name": "variable.parameter.inline.dlg",
+              "match": "\\b(color|effect|speed)\\b"
+            },
+            {
+              "name": "keyword.operator.assignment.dlg",
+              "match": "="
+            },
+            { "include": "#values" }
+          ]
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.dlg",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.dlg",
+              "match": "\\\\."
+            },
+            { "include": "#inlineOverrides" }
+          ]
+        }
+      ]
+    }
+  }
+}
