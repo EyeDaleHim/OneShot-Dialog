@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "OneShot Dialogue",
+  "name": "OneShot Dialogue (Strict)",
   "scopeName": "source.dlg",
   "patterns": [
     { "include": "#comments" },
@@ -8,7 +8,10 @@
     { "include": "#blockKeywords" },
     { "include": "#statementKeywords" },
     { "include": "#optionKeyword" },
-    { "include": "#namedArgs" },
+    { "include": "#invalidTypes" },
+    { "include": "#namedArgsNumeric" },
+    { "include": "#namedArgsString" },
+    { "include": "#namedArgColor" },
     { "include": "#conditionals" },
     { "include": "#values" },
     { "include": "#inlineOverrides" },
@@ -19,7 +22,7 @@
       "patterns": [
         {
           "name": "comment.line.number-sign.dlg",
-          "match": "#.*$"
+          "match": "#(?!([0-9A-Fa-f]{6}\\b)).*$"
         }
       ]
     },
@@ -76,11 +79,66 @@
         }
       ]
     },
-    "namedArgs": {
+    "invalidTypes": {
       "patterns": [
         {
-          "name": "variable.parameter.argument.dlg",
-          "match": "\\b(actor|portrait|side|speed|color|effect|voice|crossfade)\\b(?=\\s*=)"
+          "comment": "Catch numeric args (speed, crossfade, volume) assigned a quoted string",
+          "name": "invalid.illegal.type.expected-numeric.got-string.dlg",
+          "match": "(?<=\\b(speed|crossfade|volume)\\s*=\\s*)\"[^\"]*\""
+        },
+        {
+          "comment": "Catch numeric args (speed, crossfade, volume) assigned an unquoted identifier/word",
+          "name": "invalid.illegal.type.expected-numeric.got-identifier.dlg",
+          "match": "(?<=\\b(speed|crossfade|volume)\\s*=\\s*)[A-Za-z_][A-Za-z0-9_]*"
+        },
+        {
+          "comment": "Catch string args (actor, portrait, voice, effect) assigned a bare number",
+          "name": "invalid.illegal.type.expected-string.got-number.dlg",
+          "match": "(?<=\\b(actor|portrait|voice|effect)\\s*=\\s*)\\d+\\.?\\d*"
+        },
+        {
+          "comment": "side must be one of: left, right, none — flag anything else (bare numbers, arbitrary identifiers)",
+          "name": "invalid.illegal.type.expected-side-value.dlg",
+          "match": "(?<=\\bside\\s*=\\s*)(?!(left|right|none)\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
+        },
+        {
+          "comment": "color must be a #RRGGBB hex literal or none — flag bare numbers, plain words, and quoted strings",
+          "name": "invalid.illegal.type.expected-color.dlg",
+          "match": "(?<=\\bcolor\\s*=\\s*)(?!#[0-9A-Fa-f]{6}\\b|none\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
+        },
+        {
+          "comment": "Inline override: speed must be numeric — flag quoted strings and identifiers",
+          "name": "invalid.illegal.type.inline.expected-numeric.got-string.dlg",
+          "match": "(?<=\\{[^}]*\\bspeed\\s*=\\s*)(\"[^\"]*\"|[A-Za-z_][A-Za-z0-9_]*)"
+        },
+        {
+          "comment": "Inline override: color must be #RRGGBB or none — flag anything else",
+          "name": "invalid.illegal.type.inline.expected-color.dlg",
+          "match": "(?<=\\{[^}]*\\bcolor\\s*=\\s*)(?!#[0-9A-Fa-f]{6}\\b|none\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
+        }
+      ]
+    },
+    "namedArgsNumeric": {
+      "patterns": [
+        {
+          "name": "variable.parameter.argument.numeric.dlg",
+          "match": "\\b(speed|crossfade|volume)\\b(?=\\s*=)"
+        }
+      ]
+    },
+    "namedArgsString": {
+      "patterns": [
+        {
+          "name": "variable.parameter.argument.string.dlg",
+          "match": "\\b(actor|portrait|side|voice|effect)\\b(?=\\s*=)"
+        }
+      ]
+    },
+    "namedArgColor": {
+      "patterns": [
+        {
+          "name": "variable.parameter.argument.color.dlg",
+          "match": "\\bcolor\\b(?=\\s*=)"
         }
       ]
     },
