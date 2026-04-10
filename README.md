@@ -1,8 +1,6 @@
-# OneShot Dialogue VS Code Extension (Temporary)
+# OneShot Dialogue VS Code Extension
 
-This folder is a temporary stand-in repository for a future dedicated VS Code extension project.
-
-## Included
+This extension provides language support for EyeDaleHim's OneShot dialogue script files (`.dlg`).
 
 - Language registration for `*.dlg` files.
 - Comment support (`# ...`).
@@ -13,15 +11,6 @@ This folder is a temporary stand-in repository for a future dedicated VS Code ex
   - Booleans, numbers, and hex colors
   - Inline override blocks (`{color=#ff4444}`, `{effect}`)
 
-## Next steps (when moving to a real repo)
+## Usage
 
-1. Copy this folder into a new extension repository.
-2. Add a `LICENSE` and publisher-specific metadata.
-3. Run `vsce package` to build a `.vsix`.
-4. Add tests (`vscode-test`) and optional snippets/completions.
-
-## Source format reference
-
-The grammar targets the structure described in:
-
-- `assets/data/dialogue/FORMAT.md`
+This project is currently private use and does not address any issue at the moment, but it serves as a foundational tool for writing and managing dialogue scripts should the project concerning EyeDaleHim's OneShot engine expand further.
