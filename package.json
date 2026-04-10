@@ -10,6 +10,12 @@
   "categories": [
     "Programming Languages"
   ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EyeDaleHim/OneShot-Dialog.git"
+  },
+  "icon": "icon.png",
   "keywords": [
     "oneshot",
     "dialogue",
