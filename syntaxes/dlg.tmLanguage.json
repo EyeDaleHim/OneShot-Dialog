@@ -8,10 +8,12 @@
     { "include": "#blockKeywords" },
     { "include": "#statementKeywords" },
     { "include": "#optionKeyword" },
-    { "include": "#invalidTypes" },
     { "include": "#namedArgsNumeric" },
     { "include": "#namedArgsString" },
     { "include": "#namedArgColor" },
+    { "include": "#namedArgEnum" },
+    { "include": "#namedArgBoolean" },
+    { "include": "#invalidTypes" },
     { "include": "#conditionals" },
     { "include": "#values" },
     { "include": "#inlineOverrides" },
@@ -64,7 +66,7 @@
       "patterns": [
         {
           "name": "keyword.control.statement.dlg",
-          "match": "^(\\s*)(say|music|sfx|flag|call|goto)\\b"
+          "match": "^(\\s*)(say|script|freeze|voice_blip|goto)\\b"
         }
       ]
     },
@@ -79,50 +81,11 @@
         }
       ]
     },
-    "invalidTypes": {
-      "patterns": [
-        {
-          "comment": "Catch numeric args (speed, crossfade, volume) assigned a quoted string",
-          "name": "invalid.illegal.type.expected-numeric.got-string.dlg",
-          "match": "(?<=\\b(speed|crossfade|volume)\\s*=\\s*)\"[^\"]*\""
-        },
-        {
-          "comment": "Catch numeric args (speed, crossfade, volume) assigned an unquoted identifier/word",
-          "name": "invalid.illegal.type.expected-numeric.got-identifier.dlg",
-          "match": "(?<=\\b(speed|crossfade|volume)\\s*=\\s*)[A-Za-z_][A-Za-z0-9_]*"
-        },
-        {
-          "comment": "Catch string args (actor, portrait, voice, effect) assigned a bare number",
-          "name": "invalid.illegal.type.expected-string.got-number.dlg",
-          "match": "(?<=\\b(actor|portrait|voice|effect)\\s*=\\s*)\\d+\\.?\\d*"
-        },
-        {
-          "comment": "side must be one of: left, right, none — flag anything else (bare numbers, arbitrary identifiers)",
-          "name": "invalid.illegal.type.expected-side-value.dlg",
-          "match": "(?<=\\bside\\s*=\\s*)(?!(left|right|none)\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
-        },
-        {
-          "comment": "color must be a #RRGGBB hex literal or none — flag bare numbers, plain words, and quoted strings",
-          "name": "invalid.illegal.type.expected-color.dlg",
-          "match": "(?<=\\bcolor\\s*=\\s*)(?!#[0-9A-Fa-f]{6}\\b|none\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
-        },
-        {
-          "comment": "Inline override: speed must be numeric — flag quoted strings and identifiers",
-          "name": "invalid.illegal.type.inline.expected-numeric.got-string.dlg",
-          "match": "(?<=\\{[^}]*\\bspeed\\s*=\\s*)(\"[^\"]*\"|[A-Za-z_][A-Za-z0-9_]*)"
-        },
-        {
-          "comment": "Inline override: color must be #RRGGBB or none — flag anything else",
-          "name": "invalid.illegal.type.inline.expected-color.dlg",
-          "match": "(?<=\\{[^}]*\\bcolor\\s*=\\s*)(?!#[0-9A-Fa-f]{6}\\b|none\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
-        }
-      ]
-    },
     "namedArgsNumeric": {
       "patterns": [
         {
           "name": "variable.parameter.argument.numeric.dlg",
-          "match": "\\b(speed|crossfade|volume)\\b(?=\\s*=)"
+          "match": "\\bspeed\\b(?=\\s*=)"
         }
       ]
     },
@@ -130,7 +93,7 @@
       "patterns": [
         {
           "name": "variable.parameter.argument.string.dlg",
-          "match": "\\b(actor|portrait|side|voice|effect)\\b(?=\\s*=)"
+          "match": "\\b(actor|portrait|voice|sound)\\b(?=\\s*=)"
         }
       ]
     },
@@ -139,6 +102,76 @@
         {
           "name": "variable.parameter.argument.color.dlg",
           "match": "\\bcolor\\b(?=\\s*=)"
+        }
+      ]
+    },
+    "namedArgEnum": {
+      "patterns": [
+        {
+          "name": "variable.parameter.argument.enum.dlg",
+          "match": "\\b(effect|position|blipStyle|style)\\b(?=\\s*=)"
+        }
+      ]
+    },
+    "namedArgBoolean": {
+      "patterns": [
+        {
+          "name": "variable.parameter.argument.boolean.dlg",
+          "match": "\\bforce\\b(?=\\s*=)"
+        }
+      ]
+    },
+    "invalidTypes": {
+      "patterns": [
+        {
+          "comment": "Numeric arg (speed) assigned a quoted string",
+          "name": "invalid.illegal.type.expected-numeric.got-string.dlg",
+          "match": "(?<=\\bspeed\\s*=\\s*)\"[^\"]*\""
+        },
+        {
+          "comment": "Numeric arg (speed) assigned an unquoted identifier",
+          "name": "invalid.illegal.type.expected-numeric.got-identifier.dlg",
+          "match": "(?<=\\bspeed\\s*=\\s*)[A-Za-z_][A-Za-z0-9_]*"
+        },
+        {
+          "comment": "String args (actor, portrait, voice, sound) assigned a bare number",
+          "name": "invalid.illegal.type.expected-string.got-number.dlg",
+          "match": "(?<=\\b(actor|portrait|voice|sound)\\s*=\\s*)\\d+\\.?\\d*"
+        },
+        {
+          "comment": "position must be top, bottom, or center",
+          "name": "invalid.illegal.type.expected-position-value.dlg",
+          "match": "(?<=\\bposition\\s*=\\s*)(?!(top|bottom|center)\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
+        },
+        {
+          "comment": "effect must be none, shake, wave, flicker, or rainbow",
+          "name": "invalid.illegal.type.expected-effect-value.dlg",
+          "match": "(?<=\\beffect\\s*=\\s*)(?!(none|shake|wave|flicker|rainbow)\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
+        },
+        {
+          "comment": "blipStyle/style must be monophonic, polyphonic, or solophonic",
+          "name": "invalid.illegal.type.expected-blipstyle-value.dlg",
+          "match": "(?<=\\b(blipStyle|style)\\s*=\\s*)(?!(monophonic|polyphonic|solophonic)\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
+        },
+        {
+          "comment": "force must be true or false",
+          "name": "invalid.illegal.type.expected-boolean-value.dlg",
+          "match": "(?<=\\bforce\\s*=\\s*)(?!(true|false)\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
+        },
+        {
+          "comment": "color must be #RRGGBB or none",
+          "name": "invalid.illegal.type.expected-color.dlg",
+          "match": "(?<=\\bcolor\\s*=\\s*)(?!#[0-9A-Fa-f]{6}\\b|none\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
+        },
+        {
+          "comment": "Inline: speed/delay must be numeric",
+          "name": "invalid.illegal.type.inline.expected-numeric.dlg",
+          "match": "(?<=\\{[^}]*\\b(speed|delay)\\s*=\\s*)(\"[^\"]*\"|[A-Za-z_][A-Za-z0-9_]*)"
+        },
+        {
+          "comment": "Inline: color must be #RRGGBB or none",
+          "name": "invalid.illegal.type.inline.expected-color.dlg",
+          "match": "(?<=\\{[^}]*\\bcolor\\s*=\\s*)(?!#[0-9A-Fa-f]{6}\\b|none\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
         }
       ]
     },
@@ -193,7 +226,7 @@
           "patterns": [
             {
               "name": "variable.parameter.inline.dlg",
-              "match": "\\b(color|effect|speed)\\b"
+              "match": "\\b(color|effect|speed|delay)\\b"
             },
             {
               "name": "keyword.operator.assignment.dlg",
