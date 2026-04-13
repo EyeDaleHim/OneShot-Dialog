@@ -4,11 +4,6 @@ import * as vscode from "vscode";
 // Hover documentation
 // ---------------------------------------------------------------------------
 
-/**
- * Markdown hover text for every keyword the language server knows about.
- * Covers: scene/params block keys, say arguments, inline override keys,
- * statement commands, block/flow control keywords, and enum values.
- */
 const HOVER_DOCS: Record<string, string> = {
   // --- Scene-level params block keys ---
   speed:
@@ -29,15 +24,19 @@ const HOVER_DOCS: Record<string, string> = {
     + "Defaults to `none` (plain text). Can be overridden per-line or "
     + "mid-sentence with `{effect=wave}` inside dialogue text.",
 
+  side:
+    "**`side`** — Sets the default portrait side. "
+    + "Accepted values: `left` or `right`. Defaults to `left`.",
+
   position:
     "**`position`** — Controls the vertical placement of the dialogue box. "
     + "Accepted values: `top`, `bottom`, `center`. Defaults to `bottom`. "
     + "Set in the scene `params` block; not available as a per-line override.",
 
-  voice:
-    "**`voice`** — Asset ID of the voice-blip sound played while text scrolls. "
+  voices:
+    "**`voices`** — Comma-separated pool of voice-blip asset IDs played while text scrolls. "
     + "Relative to `sfx/dialogue/`. Use `\"\"` (empty string) to silence blips. "
-    + "Defaults to `text`. Can be overridden on individual `say` lines.",
+    + "Defaults to `\"text\"`. Can be overridden on individual `say` lines.",
 
   blipStyle:
     "**`blipStyle`** — Controls how voice blips are played. "
@@ -45,6 +44,10 @@ const HOVER_DOCS: Record<string, string> = {
     + "`polyphonic` — Pool of sound instances; allows layering. "
     + "`solophonic` — One sound instance, not restarted; ignored if already playing. "
     + "Defaults to `monophonic`. Set in the scene `params` block.",
+
+  blipModulo:
+    "**`blipModulo`** — Fire a blip every N non-whitespace characters. "
+    + "Expects an integer ≥ 1. Defaults to `1`.",
 
   // --- say-line arguments ---
   actor:
@@ -57,7 +60,8 @@ const HOVER_DOCS: Record<string, string> = {
     + "`assets/images/portraits/` and without a file extension "
     + "(e.g. `portrait=\"niko/happy\"`). "
     + "Omitting this argument keeps whichever portrait was last shown. "
-    + "Use `portrait=none` to explicitly clear the portrait.",
+    + "Use `portrait=none` to explicitly clear the portrait. Can also be "
+    + "changed mid-sentence using `{portrait=id}` or cleared with `{portrait}`.",
 
   force:
     "**`force`** — When `true`, the dialogue line auto-advances to the next node "
@@ -65,21 +69,28 @@ const HOVER_DOCS: Record<string, string> = {
     + "Accepts `true` or `false`. Only valid on `say` lines.",
 
   // --- voice_blip arguments ---
-  sound:
-    "**`sound`** — Asset ID of the blip sound for `voice_blip` commands. "
+  sounds:
+    "**`sounds`** — Comma-separated pool of voice-blip asset IDs for `voice_blip`. "
     + "Relative to `sfx/dialogue/`. Use `\"\"` to silence blips from this point onward. "
-    + "Example: `voice_blip sound=text`",
+    + "Example: `voice_blip sounds=\"beep1,beep2\"`",
 
   style:
     "**`style`** — Playback style for voice blips in a `voice_blip` command. "
-    + "Accepted values: `monophonic`, `polyphonic`, `solophonic`. "
-    + "Example: `voice_blip style=polyphonic`",
+    + "Accepted values: `monophonic`, `polyphonic`, `solophonic`.",
+
+  modulo:
+    "**`modulo`** — Fire a blip every N non-whitespace characters. "
+    + "Expects an integer ≥ 1.",
 
   // --- Inline override keys ---
   delay:
     "**`delay`** — Pauses the typewriter for the specified number of seconds. "
     + "Accepts a positive float (e.g. `{delay=1.5}`). One-shot — there is no reset form. "
     + "Only valid inside inline overrides within dialogue text.",
+
+  input:
+    "**`input`** — Inserts an input gate. Typewriter pauses here; player must confirm to continue. "
+    + "Accepted values: `skip_until_tag` or `skip_all`.",
 
   // --- Block / flow-control keywords ---
   scene:
@@ -89,31 +100,26 @@ const HOVER_DOCS: Record<string, string> = {
 
   params:
     "**`params`** — Optional block at the very top of a scene that sets default "
-    + "presentation values (`speed`, `color`, `effect`, `position`, `voice`, `blipStyle`) "
+    + "presentation values (`speed`, `color`, `effect`, `position`, `voices`, `blipStyle`, `blipModulo`, `side`) "
     + "for every `say` line in that scene. Keys omitted here fall back to engine defaults.",
 
   say:
     "**`say`** — Displays a line of text. Without `actor=` it is narration (no nameplate). "
     + "With `actor=` it is character dialogue. Accepts optional arguments: "
-    + "`actor`, `portrait`, `speed`, `color`, `effect`, `voice`, `force`.",
+    + "`actor`, `portrait`, `side`, `speed`, `color`, `effect`, `voices`, `force`.",
 
   script:
     "**`script`** — Calls an HScript function registered with the engine immediately. "
     + "Execution continues to the next node without waiting. "
-    + "The function may call `dialogueScreen.unfreeze()` to release a following `freeze`. "
-    + "Example: `script openDoor`",
+    + "The function may call `dialogueScreen.unfreeze()` to release a following `freeze`.",
 
   freeze:
     "**`freeze`** — Halts dialogue playback entirely. Player confirm has no effect. "
-    + "Resume by calling `DialogueScreen.unfreeze()` from external code (e.g. a script "
-    + "function, an animation callback, a game event). "
-    + "Typical pattern: `script startCutscene` then `freeze`.",
+    + "Resume by calling `DialogueScreen.unfreeze()` from external code.",
 
   voice_blip:
-    "**`voice_blip`** — Changes the active blip sound and/or style mid-scene. "
-    + "Accepts `sound=<asset>` (relative to `sfx/dialogue/`, or `\"\"` for silence) "
-    + "and/or `style=<monophonic|polyphonic|solophonic>`. At least one argument required. "
-    + "Example: `voice_blip sound=text style=polyphonic`",
+    "**`voice_blip`** — Changes the active blip sound pool, style, or modulo mid-scene. "
+    + "Example: `voice_blip sounds=\"text\" style=polyphonic modulo=3`",
 
   goto:
     "**`goto`** — Jumps immediately to another scene in the same file. "
@@ -121,88 +127,66 @@ const HOVER_DOCS: Record<string, string> = {
 
   if:
     "**`if`** — Evaluates a flag condition (`==` or `!=`) and runs the indented block "
-    + "when the condition is true. An optional `else:` block runs when it is false. "
-    + "Can appear standalone or after a `choice` `option` label.",
+    + "when the condition is true. An optional `else:` block runs when it is false.",
 
   else:
-    "**`else`** — Optional branch of an `if` block. Runs when the preceding `if` "
-    + "condition evaluated to false.",
+    "**`else`** — Optional branch of an `if` block.",
 
   choice:
     "**`choice`** — Presents the player with a set of labelled options. "
-    + "Each `option` has a double-quoted label and an indented body. "
-    + "Options can be made conditional with `if flag == value` after the label.",
+    + "Each `option` has a double-quoted label and an indented body.",
 
   option:
     "**`option`** — A single selectable entry inside a `choice` block. "
-    + "Takes a double-quoted label and an optional `if flag == value` condition "
-    + "that hides the option when not met.",
+    + "Takes a double-quoted label and an optional `if flag == value` condition.",
     
   // --- Enum value hovers ---
-  top:
-    "**`top`** — Places the dialogue box at the top of the screen.",
-  bottom:
-    "**`bottom`** — Places the dialogue box at the bottom of the screen.",
-  center:
-    "**`center`** — Places the dialogue box in the vertical centre of the screen.",
+  top: "**`top`** — Places the dialogue box at the top of the screen.",
+  bottom: "**`bottom`** — Places the dialogue box at the bottom of the screen.",
+  center: "**`center`** — Places the dialogue box in the vertical centre of the screen.",
+  left: "**`left`** — Places the character portrait on the left side.",
+  right: "**`right`** — Places the character portrait on the right side.",
   
-  monophonic:
-    "**`monophonic`** — One `FlxSound` instance, stopped and restarted every tick. Only one blip at a time.",
-  polyphonic:
-    "**`polyphonic`** — Pool of `FlxSound` instances. Idle instance reused; new one created if all busy. Instances never interrupted; fast reveals layer naturally.",
-  solophonic:
-    "**`solophonic`** — One `FlxSound` instance, but it is **not** restarted. If the sound is already playing, the trigger is ignored. Best for longer, melodic blips.",
+  monophonic: "**`monophonic`** — One `FlxSound` instance, stopped and restarted every tick. Only one blip at a time.",
+  polyphonic: "**`polyphonic`** — Pool of `FlxSound` instances. Idle instance reused; new one created if all busy. Instances never interrupted.",
+  solophonic: "**`solophonic`** — One `FlxSound` instance, but it is **not** restarted. If the sound is already playing, the trigger is ignored.",
     
-  shake:
-    "**`shake`** — Text characters randomly jitter.",
-  wave:
-    "**`wave`** — Text characters bounce up and down in a sine wave.",
-  flicker:
-    "**`flicker`** — Text characters quickly flash in and out of visibility.",
-  rainbow:
-    "**`rainbow`** — Text characters cycle through the colour spectrum.",
-  none:
-    "**`none`** — Disables effects, resets text colour, or clears the portrait depending on the context.",
+  shake: "**`shake`** — Text characters randomly jitter.",
+  wave: "**`wave`** — Text characters bounce up and down in a sine wave.",
+  flicker: "**`flicker`** — Text characters quickly flash in and out of visibility.",
+  rainbow: "**`rainbow`** — Text characters cycle through the colour spectrum.",
+  none: "**`none`** — Disables effects, resets text colour, or clears the portrait depending on the context.",
+
+  skip_until_tag: "**`skip_until_tag`** — Input gate. Skip (confirm during reveal) snaps to this gate position and pauses.",
+  skip_all: "**`skip_all`** — Input gate. Skip (confirm during reveal) snaps to end of text, ignoring any remaining `skip_until_tag` gates."
 };
 
 // ---------------------------------------------------------------------------
 // Type rules
 // ---------------------------------------------------------------------------
 
-/** Args that must receive a bare numeric literal (integer or float). */
-const NUMERIC_ARGS = new Set(["speed", "delay"]);
-
-/** Args that must receive a quoted string or bare identifier (not a bare number). */
-const STRING_ARGS = new Set(["actor", "portrait", "voice", "sound"]);
-
-/** Boolean args that must receive `true` or `false`. */
+const NUMERIC_ARGS = new Set(["speed", "delay", "blipModulo", "modulo"]);
+const STRING_ARGS = new Set(["actor", "portrait", "voices", "sounds"]);
 const BOOLEAN_ARGS = new Set(["force"]);
-
-/** `effect` valid values. */
 const EFFECT_VALUES = new Set(["none", "shake", "wave", "flicker", "rainbow"]);
-
-/** `position` valid values. */
 const POSITION_VALUES = new Set(["top", "bottom", "center"]);
-
-/** `blipStyle` and `style` valid values. */
 const BLIPSTYLE_VALUES = new Set(["monophonic", "polyphonic", "solophonic"]);
+const SIDE_VALUES = new Set(["left", "right"]);
+const INPUT_VALUES = new Set(["skip_until_tag", "skip_all"]);
 
 // Regex to lex named arguments anywhere on a line: key = value
-// Captures: [1] key  [2] value token (quoted string, hex color, or bare word/number)
-// Note: `delay` is intentionally excluded — it only appears in inline overrides.
 const ARG_RE =
-  /\b(actor|portrait|speed|color|effect|voice|force|position|blipStyle|sound|style)\s*=\s*("(?:[^"\\]|\\.)*"|#[0-9A-Fa-f]{6}\b|\S+)/g;
+  /\b(actor|portrait|speed|color|effect|voices|force|position|blipStyle|sounds|style|side|blipModulo|modulo)\s*=\s*("(?:[^"\\]|\\.)*"|#[0-9A-Fa-f]{6}\b|\S+)/g;
 
 // Inline-override block: {key=value ...}
 const INLINE_BLOCK_RE = /\{([^}]*)\}/g;
 // Key=value inside an inline block
-const INLINE_ARG_RE = /\b(color|effect|speed|delay)\s*=\s*("(?:[^"\\]|\\.)*"|#[0-9A-Fa-f]{6}\b|\S+)/g;
+const INLINE_ARG_RE = /\b(color|effect|speed|delay|portrait|input)\s*=\s*("(?:[^"\\]|\\.)*"|#[0-9A-Fa-f]{6}\b|\S+)/g;
 
-// Valid hex color
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 
 // ---------------------------------------------------------------------------
-// Diagnostic collection (singleton)
+// Diagnostic collection
 // ---------------------------------------------------------------------------
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -210,16 +194,13 @@ let diagnosticCollection: vscode.DiagnosticCollection;
 // Activation
 // ---------------------------------------------------------------------------
 export function activate(context: vscode.ExtensionContext): void {
-  diagnosticCollection =
-    vscode.languages.createDiagnosticCollection("oneshot-dlg");
+  diagnosticCollection = vscode.languages.createDiagnosticCollection("oneshot-dlg");
   context.subscriptions.push(diagnosticCollection);
 
-  // Validate all already-open .dlg docs on startup
   for (const doc of vscode.workspace.textDocuments) {
     if (doc.languageId === "dlg") validateDocument(doc);
   }
 
-  // Re-validate on open / change / close
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument((doc) => {
       if (doc.languageId === "dlg") validateDocument(doc);
@@ -231,7 +212,6 @@ export function activate(context: vscode.ExtensionContext): void {
       diagnosticCollection.delete(doc.uri);
     }),
 
-    // Hover provider — show docs for any known keyword under the cursor
     vscode.languages.registerHoverProvider({ language: "dlg" }, {
       provideHover(document, position) {
         const range = document.getWordRangeAtPosition(position, /[A-Za-z_][A-Za-z0-9_]*/);
@@ -241,7 +221,80 @@ export function activate(context: vscode.ExtensionContext): void {
         if (!doc) return undefined;
         return new vscode.Hover(new vscode.MarkdownString(doc), range);
       },
-    })
+    }),
+
+    // Auto-completion Provider
+    vscode.languages.registerCompletionItemProvider(
+      { language: "dlg" },
+      {
+        provideCompletionItems(document, position) {
+          const lineText = document.lineAt(position).text;
+          const linePrefix = lineText.substring(0, position.character);
+          
+          const completions: vscode.CompletionItem[] = [];
+
+          // Helper to create simple property completions
+          const addKeys = (keys: string[]) => {
+            for (const k of keys) completions.push(new vscode.CompletionItem(k, vscode.CompletionItemKind.Property));
+          };
+
+          // Helper to create enum value completions
+          const addValues = (vals: Set<string> | string[]) => {
+            for (const v of vals) completions.push(new vscode.CompletionItem(v, vscode.CompletionItemKind.Value));
+          };
+
+          // 1. Are we inside an inline block? {...}
+          const inlineMatch = linePrefix.match(/\{([^}]*)$/);
+          if (inlineMatch) {
+            const inlineContent = inlineMatch[1];
+            const enumMatch = inlineContent.match(/\b(effect|input|color)\s*=\s*$/);
+            if (enumMatch) {
+              if (enumMatch[1] === "effect") addValues(EFFECT_VALUES);
+              if (enumMatch[1] === "input") addValues(INPUT_VALUES);
+              if (enumMatch[1] === "color") addValues(["none", "#"]);
+              return completions;
+            }
+            addKeys(["color", "effect", "speed", "delay", "portrait", "input"]);
+            return completions;
+          }
+
+          // 2. Not in inline block. Check if typed `key=`
+          const valueMatch = linePrefix.match(/\b(effect|position|blipStyle|style|side|force)\s*=\s*$/);
+          if (valueMatch) {
+            const key = valueMatch[1];
+            if (key === "effect") addValues(EFFECT_VALUES);
+            else if (key === "position") addValues(POSITION_VALUES);
+            else if (key === "blipStyle" || key === "style") addValues(BLIPSTYLE_VALUES);
+            else if (key === "side") addValues(SIDE_VALUES);
+            else if (key === "force") addValues(["true", "false"]);
+            return completions;
+          }
+
+          // 3. Are we on a say line?
+          if (/^\s*say\b/.test(linePrefix)) {
+            addKeys(["actor", "portrait", "side", "speed", "color", "effect", "voices", "force"]);
+            return completions;
+          }
+
+          // 4. Are we on a voice_blip line?
+          if (/^\s*voice_blip\b/.test(linePrefix)) {
+            addKeys(["sounds", "style", "modulo"]);
+            return completions;
+          }
+
+          // 5. Are we inside a params block?
+          // Simplistic check: indented and nowhere else matched.
+          if (/^\s+/.test(linePrefix)) {
+            // Provide all possible param keys loosely if they type a space or start a word
+            addKeys(["speed", "color", "effect", "position", "voices", "blipStyle", "blipModulo", "side"]);
+            return completions;
+          }
+
+          return undefined;
+        }
+      },
+      ' ', '{', '='
+    )
   );
 }
 
@@ -259,27 +312,21 @@ function validateDocument(doc: vscode.TextDocument): void {
     const line = doc.lineAt(lineIdx);
     const text = line.text;
 
-    // Skip comment lines and blank lines
     const trimmed = text.trimStart();
     if (trimmed.startsWith("#") || trimmed === "") continue;
 
-    // Strip the comment portion (anything after a bare # not inside a string or hex color)
     const strippedText = stripComment(text);
 
-    // --- Named argument validation (top-level line) ---
     checkNamedArgs(strippedText, lineIdx, 0, diagnostics, false);
 
-    // --- Inline override block validation ({ ... }) ---
     INLINE_BLOCK_RE.lastIndex = 0;
     let blockMatch: RegExpExecArray | null;
     while ((blockMatch = INLINE_BLOCK_RE.exec(strippedText)) !== null) {
       const blockContent = blockMatch[1];
-      const blockOffset = blockMatch.index + 1; // offset of content start (after '{')
+      const blockOffset = blockMatch.index + 1;
       checkNamedArgs(blockContent, lineIdx, blockOffset, diagnostics, true);
     }
 
-    // Check for reset tags ({key}) with no matching open tag on this line,
-    // and for invalid bare tags like {delay} (which has no reset form).
     checkBareInlineTags(strippedText, lineIdx, diagnostics);
   }
 
@@ -304,7 +351,6 @@ function checkNamedArgs(
     const key = m[1];
     const rawValue = m[2];
 
-    // Position of the value token within the original line
     const valueStart = m.index + m[0].indexOf(rawValue);
     const valueEnd = valueStart + rawValue.length;
 
@@ -317,11 +363,7 @@ function checkNamedArgs(
 
     const err = checkArgValue(key, rawValue, isInline);
     if (err) {
-      const diag = new vscode.Diagnostic(
-        range,
-        err,
-        vscode.DiagnosticSeverity.Error
-      );
+      const diag = new vscode.Diagnostic(range, err, vscode.DiagnosticSeverity.Error);
       diag.source = "oneshot-dlg";
       diagnostics.push(diag);
     }
@@ -329,7 +371,7 @@ function checkNamedArgs(
 }
 
 // ---------------------------------------------------------------------------
-// Single arg-value checker — returns an error message or null
+// Single arg-value checker
 // ---------------------------------------------------------------------------
 function checkArgValue(
   key: string,
@@ -339,113 +381,71 @@ function checkArgValue(
   const isQuoted = rawValue.startsWith('"');
   const isHex = HEX_COLOR_RE.test(rawValue);
   const isNumber = !isQuoted && /^\d+(\.\d+)?$/.test(rawValue);
-  const isIdentifier =
-    !isQuoted && !isHex && /^[A-Za-z_][A-Za-z0-9_]*$/.test(rawValue);
+  // Identifiers may now include slashes (e.g. for portraits: "niko/happy")
+  const isIdentifier = !isQuoted && !isHex && /^[A-Za-z_][A-Za-z0-9_/-]*$/.test(rawValue);
 
   const context = isInline ? "inline override" : "argument";
 
-  // ----- Numeric args: speed, delay -----
   if (NUMERIC_ARGS.has(key)) {
-    if (isQuoted) {
-      return `'${key}' expects a number, not a quoted string (${context}).`;
-    }
-    if (isIdentifier) {
-      return `'${key}' expects a number, not an identifier "${rawValue}" (${context}).`;
-    }
+    if (isQuoted) return `'${key}' expects a number, not a quoted string (${context}).`;
+    if (isIdentifier) return `'${key}' expects a number, not an identifier "${rawValue}" (${context}).`;
     return null;
   }
 
-  // ----- String args: actor, portrait, voice, sound -----
   if (STRING_ARGS.has(key)) {
-    if (isNumber) {
-      return `'${key}' expects a quoted string or identifier, not a number (${context}).`;
-    }
+    if (isNumber) return `'${key}' expects a quoted string or identifier, not a number (${context}).`;
     return null;
   }
 
-  // ----- Boolean args: force -----
   if (BOOLEAN_ARGS.has(key)) {
-    if (isQuoted) {
-      return `'${key}' expects true or false, not a quoted string.`;
-    }
-    if (isNumber) {
-      return `'${key}' expects true or false, not a number.`;
-    }
+    if (isQuoted) return `'${key}' expects true or false, not a quoted string.`;
+    if (isNumber) return `'${key}' expects true or false, not a number.`;
     if (isIdentifier && rawValue !== "true" && rawValue !== "false") {
       return `'${key}' must be "true" or "false" — got "${rawValue}".`;
     }
     return null;
   }
 
-  // ----- Enum: effect -----
   if (key === "effect") {
-    if (isQuoted) {
-      return `'effect' expects a bare keyword (none, shake, wave, flicker, rainbow), not a quoted string.`;
-    }
-    if (isNumber) {
-      return `'effect' expects a keyword (none, shake, wave, flicker, rainbow), not a number.`;
-    }
-    if (isIdentifier && !EFFECT_VALUES.has(rawValue)) {
-      return `'effect' must be one of: none, shake, wave, flicker, rainbow — got "${rawValue}".`;
-    }
+    if (isQuoted) return `'effect' expects a bare keyword (none, shake, wave, flicker, rainbow), not a quoted string.`;
+    if (isNumber) return `'effect' expects a keyword, not a number.`;
+    if (isIdentifier && !EFFECT_VALUES.has(rawValue)) return `'effect' must be one of: none, shake, wave, flicker, rainbow — got "${rawValue}".`;
     return null;
   }
 
-  // ----- Enum: position -----
   if (key === "position") {
-    if (isQuoted) {
-      return `'position' expects a bare keyword (top, bottom, center), not a quoted string.`;
-    }
-    if (isNumber) {
-      return `'position' expects a keyword (top, bottom, center), not a number.`;
-    }
-    if (isIdentifier && !POSITION_VALUES.has(rawValue)) {
-      return `'position' must be "top", "bottom", or "center" — got "${rawValue}".`;
-    }
+    if (isQuoted) return `'position' expects a bare keyword (top, bottom, center), not a quoted string.`;
+    if (isNumber) return `'position' expects a keyword, not a number.`;
+    if (isIdentifier && !POSITION_VALUES.has(rawValue)) return `'position' must be "top", "bottom", or "center" — got "${rawValue}".`;
     return null;
   }
 
-  // ----- Enum: blipStyle -----
-  if (key === "blipStyle") {
-    if (isQuoted) {
-      return `'blipStyle' expects a bare keyword (monophonic, polyphonic, solophonic), not a quoted string.`;
-    }
-    if (isNumber) {
-      return `'blipStyle' expects a keyword (monophonic, polyphonic, solophonic), not a number.`;
-    }
-    if (isIdentifier && !BLIPSTYLE_VALUES.has(rawValue)) {
-      return `'blipStyle' must be "monophonic", "polyphonic", or "solophonic" — got "${rawValue}".`;
-    }
+  if (key === "side") {
+    if (isQuoted) return `'side' expects a bare keyword (left, right), not a quoted string.`;
+    if (isNumber) return `'side' expects a keyword, not a number.`;
+    if (isIdentifier && !SIDE_VALUES.has(rawValue)) return `'side' must be "left" or "right" — got "${rawValue}".`;
     return null;
   }
 
-  // ----- Enum: style (voice_blip) -----
-  if (key === "style") {
-    if (isQuoted) {
-      return `'style' expects a bare keyword (monophonic, polyphonic, solophonic), not a quoted string.`;
-    }
-    if (isNumber) {
-      return `'style' expects a keyword (monophonic, polyphonic, solophonic), not a number.`;
-    }
-    if (isIdentifier && !BLIPSTYLE_VALUES.has(rawValue)) {
-      return `'style' must be "monophonic", "polyphonic", or "solophonic" — got "${rawValue}".`;
-    }
+  if (key === "input") {
+    if (isQuoted) return `'input' expects a bare keyword (skip_until_tag, skip_all), not a quoted string.`;
+    if (isNumber) return `'input' expects a keyword, not a number.`;
+    if (isIdentifier && !INPUT_VALUES.has(rawValue)) return `'input' must be "skip_until_tag" or "skip_all" — got "${rawValue}".`;
     return null;
   }
 
-  // ----- color -----
+  if (key === "blipStyle" || key === "style") {
+    if (isQuoted) return `'${key}' expects a bare keyword (monophonic, polyphonic, solophonic), not a quoted string.`;
+    if (isNumber) return `'${key}' expects a keyword, not a number.`;
+    if (isIdentifier && !BLIPSTYLE_VALUES.has(rawValue)) return `'${key}' must be "monophonic", "polyphonic", or "solophonic" — got "${rawValue}".`;
+    return null;
+  }
+
   if (key === "color") {
-    if (isHex) return null;
-    if (rawValue === "none") return null;
-    if (isQuoted) {
-      return `'color' expects a hex literal (#RRGGBB) or "none", not a quoted string.`;
-    }
-    if (isNumber) {
-      return `'color' expects a hex literal (#RRGGBB) or "none", not a number.`;
-    }
-    if (isIdentifier) {
-      return `'color' expects a hex literal (#RRGGBB) or "none" — got "${rawValue}".`;
-    }
+    if (isHex || rawValue === "none") return null;
+    if (isQuoted) return `'color' expects a hex literal (#RRGGBB) or "none", not a quoted string.`;
+    if (isNumber) return `'color' expects a hex literal (#RRGGBB) or "none", not a number.`;
+    if (isIdentifier) return `'color' expects a hex literal (#RRGGBB) or "none" — got "${rawValue}".`;
     return null;
   }
 
@@ -455,98 +455,70 @@ function checkArgValue(
 // ---------------------------------------------------------------------------
 // Bare inline-tag checker
 // ---------------------------------------------------------------------------
-
-/**
- * Scans the quoted string regions of a line for inline tags and validates them:
- *
- * - Reset tokens (`{key}` with no `=`) for `color`, `effect`, `speed` must have
- *   a preceding `{key=value}` open tag on the same line. If not, a Warning is
- *   emitted (the reset silently no-ops in the engine).
- *
- * - `{delay}` without `=` is always invalid — `delay` has no reset form.
- *   An Error is emitted.
- *
- * @param strippedLine  The full line text (comment-stripped, but with quotes intact).
- * @param lineIdx       0-based line index for diagnostic ranges.
- * @param diagnostics   Accumulator for new diagnostics.
- */
 function checkBareInlineTags(
   strippedLine: string,
   lineIdx: number,
   diagnostics: vscode.Diagnostic[]
 ): void {
-  // Walk through every quoted string region on the line and parse the
-  // inline tags within it, tracking open/close state per key.
   let i = 0;
   while (i < strippedLine.length) {
-    // Advance to the next opening quote.
     if (strippedLine[i] !== '"') { i++; continue; }
 
-    // Scan through the quoted string, respecting \" escapes.
-    i++; // consume opening quote
-    // Track how many times each key has been "opened" without a matching reset.
+    i++; 
     const openCount: Record<string, number> = { color: 0, effect: 0, speed: 0 };
 
     while (i < strippedLine.length) {
       const ch = strippedLine[i];
 
       if (ch === '\\') {
-        i += 2; // skip escaped character
+        i += 2;
         continue;
       }
       if (ch === '"') {
-        i++; // consume closing quote
+        i++;
         break;
       }
       if (ch === '{') {
         const close = strippedLine.indexOf('}', i + 1);
-        if (close < 0) { i++; continue; } // unclosed brace — not our problem here
+        if (close < 0) { i++; continue; }
 
         const tagContent = strippedLine.slice(i + 1, close);
         const eqIdx = tagContent.indexOf('=');
         const tagKey = eqIdx >= 0 ? tagContent.slice(0, eqIdx).trim() : tagContent.trim();
 
-        // --- delay has no reset form ---
-        if (tagKey === 'delay') {
+        if (tagKey === 'delay' || tagKey === 'input') {
           if (eqIdx < 0) {
-            // {delay} without = is invalid
             const tokenStart = i;
             const tokenEnd   = close + 1;
             const range = new vscode.Range(lineIdx, tokenStart, lineIdx, tokenEnd);
             const diag = new vscode.Diagnostic(
               range,
-              `'{delay}' is not valid — 'delay' has no reset form. Use '{delay=<seconds>}' to pause the typewriter.`,
+              `'{${tagKey}}' is not valid — '${tagKey}' has no reset form.`,
               vscode.DiagnosticSeverity.Error
             );
             diag.source = "oneshot-dlg";
             diagnostics.push(diag);
           }
-          // {delay=value} is valid — nothing to check.
           i = close + 1;
           continue;
         }
 
-        // --- color, effect, speed: track open/reset pairs ---
         if (tagKey === 'color' || tagKey === 'effect' || tagKey === 'speed') {
           if (eqIdx >= 0) {
-            // {key=value} — open tag, increment counter.
             openCount[tagKey]++;
           } else {
-            // {key} — reset tag.
             if (openCount[tagKey] === 0) {
-              // No matching open tag preceded this reset on the same line.
               const tokenStart = i;
               const tokenEnd   = close + 1;
               const range = new vscode.Range(lineIdx, tokenStart, lineIdx, tokenEnd);
               const diag = new vscode.Diagnostic(
                 range,
-                `'{${tagKey}}' has no preceding '{${tagKey}=…}' open tag on this line — it resets nothing and will be ignored by the engine.`,
+                `'{${tagKey}}' has no preceding '{${tagKey}=…}' open tag on this line — it resets nothing and will be ignored.`,
                 vscode.DiagnosticSeverity.Warning
               );
               diag.source = "oneshot-dlg";
               diagnostics.push(diag);
             } else {
-              // Consume one open — this reset is valid.
               openCount[tagKey]--;
             }
           }
@@ -562,7 +534,7 @@ function checkBareInlineTags(
 }
 
 // ---------------------------------------------------------------------------
-// Strip trailing line comment (# not inside a string, not a hex color)
+// Strip trailing line comment
 // ---------------------------------------------------------------------------
 function stripComment(text: string): string {
   let inString = false;
@@ -573,7 +545,6 @@ function stripComment(text: string): string {
       continue;
     }
     if (!inString && ch === "#") {
-      // Don't strip if it's the start of a hex color literal (#RRGGBB)
       const ahead = text.slice(i + 1, i + 7);
       if (/^[0-9A-Fa-f]{6}\b/.test(ahead)) continue;
       return text.slice(0, i);

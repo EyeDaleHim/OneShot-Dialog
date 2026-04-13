@@ -2,7 +2,7 @@
   "name": "oneshot-dlg-language",
   "displayName": "OneShot Dialogue (.dlg)",
   "description": "Language support for EyeDaleHim's OneShot dialogue script files (.dlg).",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "EyeDaleHim",
   "engines": {
     "vscode": "^1.85.0"

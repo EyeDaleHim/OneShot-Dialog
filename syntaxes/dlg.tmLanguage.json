@@ -85,7 +85,7 @@
       "patterns": [
         {
           "name": "variable.parameter.argument.numeric.dlg",
-          "match": "\\bspeed\\b(?=\\s*=)"
+          "match": "\\b(speed|blipModulo|modulo)\\b(?=\\s*=)"
         }
       ]
     },
@@ -93,7 +93,7 @@
       "patterns": [
         {
           "name": "variable.parameter.argument.string.dlg",
-          "match": "\\b(actor|portrait|voice|sound)\\b(?=\\s*=)"
+          "match": "\\b(actor|portrait|voices|sounds)\\b(?=\\s*=)"
         }
       ]
     },
@@ -109,7 +109,7 @@
       "patterns": [
         {
           "name": "variable.parameter.argument.enum.dlg",
-          "match": "\\b(effect|position|blipStyle|style)\\b(?=\\s*=)"
+          "match": "\\b(effect|position|blipStyle|style|side|input)\\b(?=\\s*=)"
         }
       ]
     },
@@ -124,19 +124,19 @@
     "invalidTypes": {
       "patterns": [
         {
-          "comment": "Numeric arg (speed) assigned a quoted string",
+          "comment": "Numeric args assigned a quoted string",
           "name": "invalid.illegal.type.expected-numeric.got-string.dlg",
-          "match": "(?<=\\bspeed\\s*=\\s*)\"[^\"]*\""
+          "match": "(?<=\\b(speed|blipModulo|modulo)\\s*=\\s*)\"[^\"]*\""
         },
         {
-          "comment": "Numeric arg (speed) assigned an unquoted identifier",
+          "comment": "Numeric args assigned an unquoted identifier",
           "name": "invalid.illegal.type.expected-numeric.got-identifier.dlg",
-          "match": "(?<=\\bspeed\\s*=\\s*)[A-Za-z_][A-Za-z0-9_]*"
+          "match": "(?<=\\b(speed|blipModulo|modulo)\\s*=\\s*)[A-Za-z_][A-Za-z0-9_]*"
         },
         {
-          "comment": "String args (actor, portrait, voice, sound) assigned a bare number",
+          "comment": "String args assigned a bare number",
           "name": "invalid.illegal.type.expected-string.got-number.dlg",
-          "match": "(?<=\\b(actor|portrait|voice|sound)\\s*=\\s*)\\d+\\.?\\d*"
+          "match": "(?<=\\b(actor|portrait|voices|sounds)\\s*=\\s*)\\d+\\.?\\d*"
         },
         {
           "comment": "position must be top, bottom, or center",
@@ -152,6 +152,16 @@
           "comment": "blipStyle/style must be monophonic, polyphonic, or solophonic",
           "name": "invalid.illegal.type.expected-blipstyle-value.dlg",
           "match": "(?<=\\b(blipStyle|style)\\s*=\\s*)(?!(monophonic|polyphonic|solophonic)\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
+        },
+        {
+          "comment": "side must be left or right",
+          "name": "invalid.illegal.type.expected-side-value.dlg",
+          "match": "(?<=\\bside\\s*=\\s*)(?!(left|right)\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
+        },
+        {
+          "comment": "input must be skip_until_tag or skip_all",
+          "name": "invalid.illegal.type.expected-input-value.dlg",
+          "match": "(?<=\\binput\\s*=\\s*)(?!(skip_until_tag|skip_all)\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
         },
         {
           "comment": "force must be true or false",
@@ -226,13 +236,17 @@
           "patterns": [
             {
               "name": "variable.parameter.inline.dlg",
-              "match": "\\b(color|effect|speed|delay)\\b"
+              "match": "\\b(color|effect|speed|delay|portrait|input)\\b"
             },
             {
               "name": "keyword.operator.assignment.dlg",
               "match": "="
             },
-            { "include": "#values" }
+            { "include": "#values" },
+            {
+              "name": "string.unquoted.path.dlg",
+              "match": "[A-Za-z0-9_/-]+"
+            }
           ]
         }
       ]
