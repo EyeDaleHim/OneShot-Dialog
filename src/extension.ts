@@ -6,6 +6,11 @@ import * as vscode from "vscode";
 
 const HOVER_DOCS: Record<string, string> = {
   // --- Scene-level params block keys ---
+  design:
+    "**`design`** — Visual and audio backend. "
+    + "Accepted values: `classic`, `message`. Defaults to `classic`. "
+    + "Read from the first scene; applies to the whole script unless overridden by `set_design`.",
+
   speed:
     "**`speed`** — Controls how fast text scrolls onto the screen, measured in characters per second. "
     + "Accepts a positive float (e.g. `12`, `8.5`). Higher values make text appear faster; "
@@ -65,7 +70,7 @@ const HOVER_DOCS: Record<string, string> = {
 
   force:
     "**`force`** — When `true`, the dialogue line auto-advances to the next node "
-    + "when the typewriter finishes, without requiring player input. "
+    + "when the typewriter (or per-say fade) finishes, without requiring player input. "
     + "Accepts `true` or `false`. Only valid on `say` lines.",
 
   // --- voice_blip arguments ---
@@ -100,7 +105,7 @@ const HOVER_DOCS: Record<string, string> = {
 
   params:
     "**`params`** — Optional block at the very top of a scene that sets default "
-    + "presentation values (`speed`, `color`, `effect`, `position`, `voices`, `blipStyle`, `blipModulo`, `side`) "
+    + "presentation values (`design`, `speed`, `color`, `effect`, `position`, `voices`, `blipStyle`, `blipModulo`, `side`) "
     + "for every `say` line in that scene. Keys omitted here fall back to engine defaults.",
 
   say:
@@ -120,6 +125,10 @@ const HOVER_DOCS: Record<string, string> = {
   voice_blip:
     "**`voice_blip`** — Changes the active blip sound pool, style, or modulo mid-scene. "
     + "Example: `voice_blip sounds=\"text\" style=polyphonic modulo=3`",
+
+  set_design:
+    "**`set_design`** — Switches the active visual/audio renderer mid-dialogue, "
+    + "effective immediately between say nodes. Changing the design mid-reveal is not supported.",
 
   goto:
     "**`goto`** — Jumps immediately to another scene in the same file. "
@@ -141,6 +150,9 @@ const HOVER_DOCS: Record<string, string> = {
     + "Takes a double-quoted label and an optional `if flag == value` condition.",
     
   // --- Enum value hovers ---
+  classic: "**`classic`** — Standard RPG dialogue box anchored to a screen edge. Typewriter text, portraits, voice blips.",
+  message: "**`message`** — Roblox 2006–2014 'Message'-style presentation. Full-screen, instant text, per-say fade.",
+
   top: "**`top`** — Places the dialogue box at the top of the screen.",
   bottom: "**`bottom`** — Places the dialogue box at the bottom of the screen.",
   center: "**`center`** — Places the dialogue box in the vertical centre of the screen.",
@@ -173,10 +185,11 @@ const POSITION_VALUES = new Set(["top", "bottom", "center"]);
 const BLIPSTYLE_VALUES = new Set(["monophonic", "polyphonic", "solophonic"]);
 const SIDE_VALUES = new Set(["left", "right"]);
 const INPUT_VALUES = new Set(["skip_until_tag", "skip_all"]);
+const DESIGN_VALUES = new Set(["classic", "message"]);
 
 // Regex to lex named arguments anywhere on a line: key = value
 const ARG_RE =
-  /\b(actor|portrait|speed|color|effect|voices|force|position|blipStyle|sounds|style|side|blipModulo|modulo)\s*=\s*("(?:[^"\\]|\\.)*"|#[0-9A-Fa-f]{6}\b|\S+)/g;
+  /\b(design|actor|portrait|speed|color|effect|voices|force|position|blipStyle|sounds|style|side|blipModulo|modulo)\s*=\s*("(?:[^"\\]|\\.)*"|#[0-9A-Fa-f]{6}\b|\S+)/g;
 
 // Inline-override block: {key=value ...}
 const INLINE_BLOCK_RE = /\{([^}]*)\}/g;
@@ -259,10 +272,11 @@ export function activate(context: vscode.ExtensionContext): void {
           }
 
           // 2. Not in inline block. Check if typed `key=`
-          const valueMatch = linePrefix.match(/\b(effect|position|blipStyle|style|side|force)\s*=\s*$/);
+          const valueMatch = linePrefix.match(/\b(design|effect|position|blipStyle|style|side|force)\s*=\s*$/);
           if (valueMatch) {
             const key = valueMatch[1];
-            if (key === "effect") addValues(EFFECT_VALUES);
+            if (key === "design") addValues(DESIGN_VALUES);
+            else if (key === "effect") addValues(EFFECT_VALUES);
             else if (key === "position") addValues(POSITION_VALUES);
             else if (key === "blipStyle" || key === "style") addValues(BLIPSTYLE_VALUES);
             else if (key === "side") addValues(SIDE_VALUES);
@@ -282,11 +296,17 @@ export function activate(context: vscode.ExtensionContext): void {
             return completions;
           }
 
-          // 5. Are we inside a params block?
+          // 5. Are we on a set_design line?
+          if (/^\s*set_design\b/.test(linePrefix)) {
+            addValues(DESIGN_VALUES);
+            return completions;
+          }
+
+          // 6. Are we inside a params block?
           // Simplistic check: indented and nowhere else matched.
           if (/^\s+/.test(linePrefix)) {
             // Provide all possible param keys loosely if they type a space or start a word
-            addKeys(["speed", "color", "effect", "position", "voices", "blipStyle", "blipModulo", "side"]);
+            addKeys(["design", "speed", "color", "effect", "position", "voices", "blipStyle", "blipModulo", "side"]);
             return completions;
           }
 
@@ -403,6 +423,13 @@ function checkArgValue(
     if (isIdentifier && rawValue !== "true" && rawValue !== "false") {
       return `'${key}' must be "true" or "false" — got "${rawValue}".`;
     }
+    return null;
+  }
+
+  if (key === "design") {
+    if (isQuoted) return `'design' expects a bare keyword (classic, message), not a quoted string.`;
+    if (isNumber) return `'design' expects a keyword, not a number.`;
+    if (isIdentifier && !DESIGN_VALUES.has(rawValue)) return `'design' must be "classic" or "message" — got "${rawValue}".`;
     return null;
   }
 

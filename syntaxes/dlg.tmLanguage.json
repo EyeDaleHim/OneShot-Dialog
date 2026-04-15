@@ -66,7 +66,7 @@
       "patterns": [
         {
           "name": "keyword.control.statement.dlg",
-          "match": "^(\\s*)(say|script|freeze|voice_blip|goto)\\b"
+          "match": "^(\\s*)(say|script|freeze|voice_blip|goto|set_design)\\b"
         }
       ]
     },
@@ -109,7 +109,7 @@
       "patterns": [
         {
           "name": "variable.parameter.argument.enum.dlg",
-          "match": "\\b(effect|position|blipStyle|style|side|input)\\b(?=\\s*=)"
+          "match": "\\b(design|effect|position|blipStyle|style|side|input)\\b(?=\\s*=)"
         }
       ]
     },
@@ -137,6 +137,11 @@
           "comment": "String args assigned a bare number",
           "name": "invalid.illegal.type.expected-string.got-number.dlg",
           "match": "(?<=\\b(actor|portrait|voices|sounds)\\s*=\\s*)\\d+\\.?\\d*"
+        },
+        {
+          "comment": "design must be classic or message",
+          "name": "invalid.illegal.type.expected-design-value.dlg",
+          "match": "(?<=\\bdesign\\s*=\\s*)(?!(classic|message)\\b)(\\d+\\.?\\d*|[A-Za-z_][A-Za-z0-9_]*|\"[^\"]*\")"
         },
         {
           "comment": "position must be top, bottom, or center",
@@ -214,6 +219,10 @@
         {
           "name": "constant.other.color.hex.dlg",
           "match": "#[0-9A-Fa-f]{6}\\b"
+        },
+        {
+          "name": "constant.language.design.dlg",
+          "match": "\\b(classic|message)\\b"
         },
         {
           "name": "constant.language.none.dlg",
